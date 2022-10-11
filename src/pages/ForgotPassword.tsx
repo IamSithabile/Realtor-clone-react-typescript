@@ -1,6 +1,4 @@
-import React, { FC } from "react";
-
-const ForgotPassword: FC = () => {
+const ForgotPassword = (): JSX.Element => {
   return <div>ForgotPassword</div>;
 };
 

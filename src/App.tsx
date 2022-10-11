@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React from "react";
 import Home from "./pages/Home";
 import Offers from "./pages/Offers";
 import Profile from "./pages/Profile";
@@ -8,9 +8,12 @@ import ForgotPassword from "./pages/ForgotPassword";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-const App: FC = () => {
+import Header from "./components/Header";
+
+const App = (): JSX.Element => {
   return (
     <Router>
+      <Header />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/offers" element={<Offers />} />
