@@ -1,7 +1,7 @@
-import React, { FC } from "react";
+import React from "react";
 import { NavLink, Link } from "react-router-dom";
 
-const Header: FC = () => {
+const Header = (): JSX.Element => {
   let activeClassName =
     "cursor-pointer py-3 text-sm font-semibold text-black border-b-red-500 border-b-[3px]";
 
@@ -23,6 +23,7 @@ const Header: FC = () => {
             <li className="cursor-pointer py-3 text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent">
               <NavLink
                 to="/"
+                end
                 className={({ isActive }) =>
                   isActive ? activeClassName : undefined
                 }
@@ -33,7 +34,7 @@ const Header: FC = () => {
 
             <li className="cursor-pointer py-3 text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent">
               <NavLink
-                to="offers"
+                to="/offers"
                 className={({ isActive }) =>
                   isActive ? activeClassName : undefined
                 }
@@ -44,7 +45,7 @@ const Header: FC = () => {
 
             <li className="cursor-pointer py-3 text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent">
               <NavLink
-                to="sign-in"
+                to="/sign-in"
                 className={({ isActive }) =>
                   isActive ? activeClassName : undefined
                 }
