@@ -2,23 +2,12 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import OAuth from "../components/OAuth";
 
-type ForgottenPassword = {
-  email: string;
-};
-
 const ForgotPassword = (): JSX.Element => {
-  const [formInput, setFormInput] = useState<ForgottenPassword>({
-    email: "",
-  });
-
-  const { email } = formInput;
+  const [email, setEmail] = useState("");
 
   const changeHandler: (e: React.FormEvent<HTMLInputElement>) => void = (e) => {
     e.preventDefault();
-
-    setFormInput((prevState) => {
-      return { ...prevState, [e.currentTarget.id]: e.currentTarget.value };
-    });
+    setEmail(e.currentTarget.value);
   };
   return (
     <>
@@ -32,11 +21,11 @@ const ForgotPassword = (): JSX.Element => {
             className="w-full rounded-2xl"
           />
         </div>
+
         <div className="md:w-[67%] lg:w-[40%] w-full lg:ml-20">
           <form className="flex flex-col items-center">
             <input
               type="email"
-              name="email"
               id="email"
               value={email}
               onChange={changeHandler}

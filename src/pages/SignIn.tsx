@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { Link } from "react-router-dom";
 import OAuth from "../components/OAuth";
+import { app } from "../firebase";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 type SigningIn = {
   email: string;
-  password: string | number;
+  password: string;
 };
 
 const SignIn = (): JSX.Element => {
@@ -22,13 +24,40 @@ const SignIn = (): JSX.Element => {
     setShowPassword((prevState) => !prevState);
   };
 
-  const changeHandler: (e: React.FormEvent<HTMLInputElement>) => void = (e) => {
+  const changeHandler: (e: React.ChangeEvent<HTMLInputElement>) => void = (
+    e
+  ) => {
     e.preventDefault();
 
     setFormInput((prevState) => {
-      return { ...prevState, [e.currentTarget.id]: e.currentTarget.value };
+      return { ...prevState, [e.target.id]: e.target.value };
     });
   };
+
+  const onSubmitHandler: (e: React.FormEvent<HTMLFormElement>) => void = async (
+    e
+  ) => {
+    e.preventDefault();
+
+    try {
+      const auth = getAuth(app);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const user = userCredential.user;
+
+      console.log(user);
+    } catch (error: any) {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+
+      console.log(errorCode, errorMessage);
+    }
+  };
+
   return (
     <>
       <h1 className="text-3xl font-bold py-6 text-center">Sign In</h1>
@@ -42,10 +71,12 @@ const SignIn = (): JSX.Element => {
           />
         </div>
         <div className="md:w-[67%] lg:w-[40%] w-full lg:ml-20">
-          <form className="flex flex-col items-center">
+          <form
+            className="flex flex-col items-center"
+            onSubmit={onSubmitHandler}
+          >
             <input
               type="email"
-              name="email"
               id="email"
               value={email}
               onChange={changeHandler}
@@ -55,7 +86,6 @@ const SignIn = (): JSX.Element => {
             <div className=" relative w-full">
               <input
                 type={showPassword ? "text" : "password"}
-                name="password"
                 id="password"
                 value={password}
                 onChange={changeHandler}

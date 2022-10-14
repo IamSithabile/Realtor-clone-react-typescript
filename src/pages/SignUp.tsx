@@ -1,22 +1,31 @@
 import React, { useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import OAuth from "../components/OAuth";
+import { app, db } from "../firebase";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { FieldValue, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 
 type SigningUp = {
   name: string;
   email: string;
-  password: string | number;
+  password: string;
+  timeStamp?: FieldValue;
 };
 
 const SignUp = (): JSX.Element => {
-  const [formInput, setFormInput] = useState<SigningUp>({
+  const [formData, setFormData] = useState<SigningUp>({
     name: "",
     email: "",
     password: "",
   });
 
-  const { name, email, password } = formInput;
+  const { name, email, password } = formData;
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -24,13 +33,65 @@ const SignUp = (): JSX.Element => {
     setShowPassword((prevState) => !prevState);
   };
 
-  const changeHandler: (e: React.FormEvent<HTMLInputElement>) => void = (e) => {
+  const changeHandler: (e: React.ChangeEvent<HTMLInputElement>) => void = (
+    e
+  ) => {
     e.preventDefault();
 
-    setFormInput((prevState) => {
-      return { ...prevState, [e.currentTarget.id]: e.currentTarget.value };
+    setFormData((prevState) => {
+      return { ...prevState, [e.target.id]: e.target.value };
     });
   };
+
+  // In typescript the error argument that is returned by 'Catch', is of an unknown "Type"
+  //Therefore we create a helper function that converts the return type to a string if it is not of type 'Error'
+  function getErrorMessage(error: unknown) {
+    if (error instanceof Error) return toast.error(error.message);
+    return toast.error(String(error + "was not of type Error"));
+  }
+
+  const navigate = useNavigate();
+
+  const onSubmitHandler: (e: React.FormEvent<HTMLFormElement>) => void = async (
+    e
+  ) => {
+    e.preventDefault();
+
+    try {
+      //Access the firebase Authentication service
+      const auth = getAuth(app);
+      //Create User object using email and password
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // Having created a 'User' object and stored it in userCredential, update the User objects displayName
+      updateProfile(userCredential.user, { displayName: name });
+      // Access the user object
+      const user = userCredential.user;
+
+      //Save the created user to the database, but first delete the password from the user.
+      const formDataCopy = { ...formData } as Partial<SigningUp>;
+      delete formDataCopy.password;
+      // Add a timestamp to the formdata object
+      formDataCopy.timeStamp = serverTimestamp();
+
+      // Create collection and add document
+      await setDoc(doc(db, "users", user.uid), formDataCopy);
+
+      toast.success("Profile created succesfully");
+
+      // programatically navigate to the homepage. Do not use REDIRECT
+      navigate("/");
+
+      console.log(user);
+    } catch (error) {
+      reportError({ message: getErrorMessage(error) });
+    }
+  };
+
   return (
     <>
       <h1 className="text-3xl font-bold py-6 text-center">Sign Up</h1>
@@ -44,7 +105,10 @@ const SignUp = (): JSX.Element => {
           />
         </div>
         <div className="md:w-[67%] lg:w-[40%] w-full lg:ml-20">
-          <form className="flex flex-col items-center">
+          <form
+            className="flex flex-col items-center"
+            onSubmit={onSubmitHandler}
+          >
             <input
               type="text"
               name="name"
