@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import OAuth from "../components/OAuth";
-import { app, db } from "../firebase";
+import { db } from "../firebase";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -59,7 +59,7 @@ const SignUp = (): JSX.Element => {
 
     try {
       //Access the firebase Authentication service
-      const auth = getAuth(app);
+      const auth = getAuth();
       //Create User object using email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import OAuth from "../components/OAuth";
 import { app } from "../firebase";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { toast } from "react-toastify";
 
 type SigningIn = {
   email: string;
@@ -34,6 +35,13 @@ const SignIn = (): JSX.Element => {
     });
   };
 
+  function getErrorMessage(error: unknown) {
+    if (error instanceof Error) return toast.error(error.message);
+    return toast.error(String(error + "was not of type Error"));
+  }
+
+  const navigate = useNavigate();
+
   const onSubmitHandler: (e: React.FormEvent<HTMLFormElement>) => void = async (
     e
   ) => {
@@ -47,14 +55,15 @@ const SignIn = (): JSX.Element => {
         password
       );
 
-      const user = userCredential.user;
+      if (userCredential.user) {
+        toast.success("logged in succesfully");
 
-      console.log(user);
-    } catch (error: any) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-
-      console.log(errorCode, errorMessage);
+        // programatically navigate to the homepage. Do not use REDIRECT
+        navigate("/");
+        console.log(userCredential.user);
+      }
+    } catch (error) {
+      reportError(getErrorMessage(error));
     }
   };
 

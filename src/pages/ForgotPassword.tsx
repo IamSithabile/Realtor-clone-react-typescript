@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import OAuth from "../components/OAuth";
 
 const ForgotPassword = (): JSX.Element => {
@@ -9,6 +11,25 @@ const ForgotPassword = (): JSX.Element => {
     e.preventDefault();
     setEmail(e.currentTarget.value);
   };
+
+  function getErrorMessage(error: unknown) {
+    if (error instanceof Error) return toast.error(error.message);
+    return toast.error(String(error + "was not of type Error"));
+  }
+
+  const onSubmitHandler: (e: React.FormEvent<HTMLFormElement>) => void = async (
+    e
+  ) => {
+    e.preventDefault();
+    try {
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, email);
+      toast.success("Email was sent");
+    } catch (error) {
+      reportError(getErrorMessage(error));
+    }
+  };
+
   return (
     <>
       <h1 className="text-3xl font-bold py-6 text-center">Forgot Password</h1>
@@ -23,7 +44,10 @@ const ForgotPassword = (): JSX.Element => {
         </div>
 
         <div className="md:w-[67%] lg:w-[40%] w-full lg:ml-20">
-          <form className="flex flex-col items-center">
+          <form
+            className="flex flex-col items-center"
+            onSubmit={onSubmitHandler}
+          >
             <input
               type="email"
               id="email"
