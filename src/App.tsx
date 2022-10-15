@@ -18,6 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Header from "./components/Header";
 import PrivateRoute from "./components/PrivateRoute";
+import CreateListing from "./pages/CreateListing";
 
 const App = (): JSX.Element => {
   return (
@@ -33,6 +34,7 @@ const App = (): JSX.Element => {
           </Route>
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/create-listing" element={<CreateListing />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

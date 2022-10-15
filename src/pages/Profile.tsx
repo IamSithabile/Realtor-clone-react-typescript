@@ -1,7 +1,9 @@
 import { getAuth, updateProfile } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
+import { FcHome } from "react-icons/fc";
 import { useNavigate } from "react-router";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { db } from "../firebase";
 
@@ -115,6 +117,18 @@ const Profile = (): JSX.Element => {
               Sign Out
             </p>
           </div>
+          <button
+            type="submit"
+            className=" w-full  bg-blue-500 hover:bg-blue-700 text-white uppercase font-semibold mt-6 rounded px-3 py-2 mx-3 shadow-md hover:shadow-lg"
+          >
+            <Link
+              to="/create-listing"
+              className="w-full flex items-center justify-center "
+            >
+              <FcHome className="text-3xl bg-red-200 rounded-full p-1 border-white border-2 mr-2" />
+              sell or rent your home
+            </Link>
+          </button>
         </form>
       </section>
     </>
