@@ -37,11 +37,11 @@ const OAuth = (): JSX.Element => {
           email: user.email,
           timestamp: serverTimestamp(),
         });
+        return toast.success("OAuth: Succesfully created a user account");
       }
-
+      toast.success("OAuth: Successfuly logged in");
       console.log(user);
-      toast("OAuth: Succesfully created a user account");
-      navigate("/");
+      navigate("/profile");
     } catch (error) {
       reportError(getErrorMessage(error));
     }

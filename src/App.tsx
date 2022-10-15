@@ -17,6 +17,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Header from "./components/Header";
+import PrivateRoute from "./components/PrivateRoute";
 
 const App = (): JSX.Element => {
   return (
@@ -26,8 +27,10 @@ const App = (): JSX.Element => {
         <Routes>
           <Route index element={<Home />} />
           <Route path="/offers" element={<Offers />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/profile" element={<PrivateRoute />}>
+            <Route path="/profile" element={<Profile />} />
+          </Route>
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -35,7 +38,7 @@ const App = (): JSX.Element => {
       </Router>
       <ToastContainer
         position="bottom-center"
-        autoClose={3000}
+        autoClose={1500}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick

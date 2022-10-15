@@ -59,7 +59,7 @@ const SignIn = (): JSX.Element => {
         toast.success("logged in succesfully");
 
         // programatically navigate to the homepage. Do not use REDIRECT
-        navigate("/");
+        navigate("/profile");
         console.log(userCredential.user);
       }
     } catch (error) {
