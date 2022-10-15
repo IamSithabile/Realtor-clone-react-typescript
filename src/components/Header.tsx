@@ -1,7 +1,21 @@
-import React from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import React, { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 
 const Header = (): JSX.Element => {
+  const [pageState, setPageState] = useState("sign-in");
+  const auth = getAuth();
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setPageState("profile");
+      } else {
+        setPageState("sign-in");
+      }
+    });
+  }, [auth]);
+
   let activeClassName =
     "cursor-pointer py-3 text-sm font-semibold text-black border-b-red-500 border-b-[3px]";
 
@@ -45,12 +59,12 @@ const Header = (): JSX.Element => {
 
             <li className="cursor-pointer py-3 text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent">
               <NavLink
-                to="/sign-in"
+                to={`/${pageState}`}
                 className={({ isActive }) =>
                   isActive ? activeClassName : undefined
                 }
               >
-                Sign-In
+                {pageState}
               </NavLink>
             </li>
           </ul>
