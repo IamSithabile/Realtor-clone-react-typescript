@@ -1,7 +1,9 @@
 import { getAuth, updateProfile } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import { db } from "../firebase";
 
 const Profile = (): JSX.Element => {
   const auth = getAuth();
@@ -16,15 +18,44 @@ const Profile = (): JSX.Element => {
     email: auth.currentUser?.email!, // non-null assertion
     displayName: auth.currentUser?.displayName as string, // type assertion
   });
+
   const { email, displayName } = formData;
+
+  const [changeDetail, setChangeDetail] = useState(false);
+
+  const getErrorMessage = (error: unknown) => {
+    if (error instanceof Error) return toast.error(error.message);
+    return toast.error(String(error + "was not of type Error"));
+  };
+
+  const onDetailSubmit: () => void = async () => {
+    try {
+      // update profile
+      if (auth.currentUser?.displayName !== displayName) {
+        await updateProfile(auth.currentUser!, {
+          displayName,
+        });
+        // update database
+
+        const docRef = doc(db, "users", auth.currentUser?.uid!);
+
+        await updateDoc(docRef, { name: displayName });
+
+        toast.success("Profile updated successfuly!");
+      }
+    } catch (error) {
+      getErrorMessage(error);
+      console.log(error);
+      toast.error("There has been an error updating the profile" + error);
+    }
+  };
 
   const onEditHandler: (e: React.MouseEvent<HTMLSpanElement>) => void = (e) => {
     e.preventDefault();
 
-    // updateProfile(auth.currentUser!, {
-    //   displayName: e.target.,
+    changeDetail && onDetailSubmit();
 
-    // });
+    setChangeDetail((prevState) => !prevState);
   };
 
   const onSignOutHandler: (
@@ -48,9 +79,16 @@ const Profile = (): JSX.Element => {
             type="text"
             name="name"
             id="name"
+            onChange={(e) =>
+              setFormData((prevState) => {
+                return { ...prevState, displayName: e.target.value };
+              })
+            }
             value={displayName}
-            disabled
-            className="w-full text-gray-500 border border-gray-300 mb-6"
+            disabled={!changeDetail}
+            className={`w-full text-gray-500 border border-gray-300 mb-6 ${
+              changeDetail && "bg-red-200 focus:bg-red-200"
+            }`}
           />
           <input
             type="email"
@@ -67,7 +105,7 @@ const Profile = (): JSX.Element => {
                 className="text-red-500 hover:text-red-700 ml-2 cursor-pointer transition ease-in-out hover:font-semibold"
                 onClick={onEditHandler}
               >
-                Edit
+                {changeDetail ? "Apply change" : "Edit"}
               </span>
             </p>
             <p
