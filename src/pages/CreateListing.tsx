@@ -1,7 +1,46 @@
 import React, { useState } from "react";
+import Spinner from "../components/Spinner";
+import { toast } from "react-toastify";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+import { getAuth } from "firebase/auth";
+import { v4 as uuidv4 } from "uuid";
+import {
+  addDoc,
+  collection,
+  FieldValue,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useNavigate } from "react-router-dom";
+
+interface iForm {
+  type: string;
+  name: string;
+  bedrooms: number;
+  bathrooms: number;
+  parking: boolean;
+  furnished: boolean;
+  address: string;
+  description: string;
+  offer: boolean;
+  regularPrice: number;
+  discountedPrice: number;
+  latitude?: number;
+  longitude?: number;
+  images: any;
+}
 
 const CreateListing = (): JSX.Element => {
-  const [formData, setFormData] = useState({
+  const auth = getAuth();
+  const navigate = useNavigate();
+  const [geolocationEnabled, setGeolocationEnabled] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<iForm>({
     type: "rent",
     name: "",
     bedrooms: 1,
@@ -15,7 +54,7 @@ const CreateListing = (): JSX.Element => {
     discountedPrice: 0,
     latitude: 0,
     longitude: 0,
-    images: {},
+    images: [],
   });
   const {
     type,
@@ -29,6 +68,9 @@ const CreateListing = (): JSX.Element => {
     offer,
     regularPrice,
     discountedPrice,
+    latitude,
+    longitude,
+    images,
   } = formData;
 
   const onChange = (
@@ -39,22 +81,179 @@ const CreateListing = (): JSX.Element => {
   ) => {
     e.preventDefault();
 
-    const { target } = e as React.ChangeEvent<HTMLInputElement>; // For the input I will need the target.value
+    // The button element may complain. in that case create its button event
 
-    if (target.value.length > 0) {
-      // change route
+    const {
+      target: { value: inputValue },
+    } = e as React.ChangeEvent<HTMLInputElement>; // For the input I will need the target.value
+    const {
+      target: { id: inputId },
+    } = e as React.ChangeEvent<HTMLInputElement>; // For when manipulating an inputs elements id
+    const {
+      target: { id: textAreaId },
+    } = e as React.ChangeEvent<HTMLTextAreaElement>; // For when manipulating an inputs elements id
+    const {
+      currentTarget: { files },
+    } = e as React.ChangeEvent<HTMLInputElement>; // When an input element of type file is uploaded
+    const {
+      target: { value: textAreaValue },
+    } = e as React.ChangeEvent<HTMLTextAreaElement>; // when a text area need the value entered
+
+    // Handle Yes or no buttons
+    let boolean: boolean;
+
+    if (inputValue === "true") {
+      boolean = true;
+      console.log(
+        `a button with id: ${inputId}, has be clicked with the value: ${boolean} of the type ${typeof boolean}`
+      );
+      setFormData((prevState) => {
+        return { ...prevState, [inputId]: boolean };
+      });
+      return;
+    } else if (inputValue === "false") {
+      boolean = false;
+      console.log(
+        `a button with id: ${inputId}, has be clicked with the value: ${boolean} of the type ${typeof boolean}`
+      );
+      setFormData((prevState) => {
+        return { ...prevState, [inputId]: boolean };
+      });
+      return;
+    }
+
+    // handle text//numbers// boolean
+    if (inputValue) {
+      setFormData((prevState) => {
+        return { ...prevState, [inputId]: inputValue };
+      });
+    }
+
+    if (textAreaValue) {
+      setFormData((prevState) => {
+        return { ...prevState, [textAreaId]: textAreaValue };
+      });
+    }
+
+    if (files) {
+      setFormData((prevState) => {
+        return { ...prevState, images: files };
+      });
     }
   };
 
-  const onSubmitHandler: (e: React.FormEvent<HTMLFormElement>) => void = (
+  const onSubmitHandler: (e: React.FormEvent<HTMLFormElement>) => void = async (
     e
   ) => {
     e.preventDefault();
+    console.log(formData);
+    setLoading(true);
+    if (+discountedPrice >= +regularPrice) {
+      setLoading(false);
+      toast.error("Discounted price needs to be less than regular price");
+      return;
+    }
+
+    if (formData.images > 6) {
+      setLoading(false);
+      toast.error("maximum 6 images are allowed");
+      return;
+    }
+
+    let geolocation: any = {};
+    let location;
+    if (geolocationEnabled) {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.REACT_APP_GEOCODE_API_KEY}`
+      );
+      const data = await response.json();
+      console.log(data);
+      geolocation.lat = data.results[0]?.geometry.location.lat ?? 0;
+      geolocation.lng = data.results[0]?.geometry.location.lng ?? 0;
+
+      location = data.status === "ZERO_RESULTS" && undefined;
+
+      if (location === undefined) {
+        setLoading(false);
+        toast.error("please enter a correct address");
+        return;
+      }
+    } else {
+      geolocation.lat = latitude;
+      geolocation.lng = longitude;
+    }
+
+    const storeImage: (image: File) => Promise<string> = (image) => {
+      return new Promise((resolve, reject) => {
+        const storage = getStorage();
+        const filename = `${auth.currentUser?.uid!}-${image.name}-${uuidv4()}`;
+        const storageRef = ref(storage, filename);
+        const uploadTask = uploadBytesResumable(storageRef, image);
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            // Observe state change events such as progress, pause, and resume
+            // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log("Upload is " + progress + "% done");
+            switch (snapshot.state) {
+              case "paused":
+                console.log("Upload is paused");
+                break;
+              case "running":
+                console.log("Upload is running");
+                break;
+            }
+          },
+          (error) => {
+            // Handle unsuccessful uploads
+            reject(error);
+          },
+          () => {
+            // Handle successful uploads on complete
+            // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+              resolve(downloadURL);
+            });
+          }
+        );
+      });
+    };
+
+    const imgUrls = await Promise.all(
+      [...images].map((image) => storeImage(image))
+    ).catch((error) => {
+      setLoading(false);
+      toast.error("Images not uploaded");
+      return;
+    });
+
+    const formDataCopy = {
+      ...formData,
+      imgUrls,
+      timestamp: serverTimestamp(),
+      userRef: auth.currentUser?.uid,
+    } as Partial<iForm>;
+
+    delete formDataCopy.images;
+    !formDataCopy.offer && delete formDataCopy.discountedPrice;
+    delete formDataCopy.latitude;
+    delete formDataCopy.longitude;
+    const docRef = await addDoc(collection(db, "listings"), formDataCopy);
+    setLoading(false);
+    toast.success("Listing created");
+    navigate(`/category/${formDataCopy.type}/${docRef.id}`);
   };
+
+  if (loading) {
+    return <Spinner />;
+  }
 
   return (
     <main className="max-w-md px-2 mx-auto">
       <h1 className="text-3xl text-center mt-6 font-bold">Create a Listing</h1>
+
       <form onSubmit={onSubmitHandler}>
         <p className="text-lg mt-6 font-semibold">Sell / Rent</p>
         <div className="flex">
@@ -130,7 +329,7 @@ const CreateListing = (): JSX.Element => {
           <button
             type="button"
             id="parking"
-            value="yes"
+            value="true"
             onClick={onChange}
             className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
               !parking ? "bg-white text-black" : "bg-slate-600 text-white"
@@ -141,7 +340,7 @@ const CreateListing = (): JSX.Element => {
           <button
             type="button"
             id="parking"
-            value="no"
+            value="false"
             onClick={onChange}
             className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
               parking ? "bg-white text-black" : "bg-slate-600 text-white"
@@ -155,7 +354,7 @@ const CreateListing = (): JSX.Element => {
           <button
             type="button"
             id="furnished"
-            value="yes"
+            value="true"
             onClick={onChange}
             className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
               !furnished ? "bg-white text-black" : "bg-slate-600 text-white"
@@ -166,7 +365,7 @@ const CreateListing = (): JSX.Element => {
           <button
             type="button"
             id="furnished"
-            value="no"
+            value="false"
             onClick={onChange}
             className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
               furnished ? "bg-white text-black" : "bg-slate-600 text-white"
@@ -184,6 +383,36 @@ const CreateListing = (): JSX.Element => {
           required
           className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 mb-6"
         />
+        {!geolocationEnabled && (
+          <div className="flex space-x-6 justify-start mb-6">
+            <div className="">
+              <p className="text-lg font-semibold">Latitude</p>
+              <input
+                type="number"
+                id="latitude"
+                value={latitude}
+                onChange={onChange}
+                required
+                min="-90"
+                max="90"
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:bg-white focus:text-gray-700 focus:border-slate-600 text-center"
+              />
+            </div>
+            <div className="">
+              <p className="text-lg font-semibold">Longitude</p>
+              <input
+                type="number"
+                id="longitude"
+                value={longitude}
+                onChange={onChange}
+                required
+                min="-180"
+                max="180"
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:bg-white focus:text-gray-700 focus:border-slate-600 text-center"
+              />
+            </div>
+          </div>
+        )}
         <p className="text-lg font-semibold">Description</p>
         <textarea
           id="description"
@@ -198,7 +427,7 @@ const CreateListing = (): JSX.Element => {
           <button
             type="button"
             id="offer"
-            value="yes"
+            value="true"
             onClick={onChange}
             className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
               !offer ? "bg-white text-black" : "bg-slate-600 text-white"
@@ -209,7 +438,7 @@ const CreateListing = (): JSX.Element => {
           <button
             type="button"
             id="offer"
-            value="no"
+            value="false"
             onClick={onChange}
             className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
               offer ? "bg-white text-black" : "bg-slate-600 text-white"
@@ -277,7 +506,6 @@ const CreateListing = (): JSX.Element => {
             onChange={onChange}
             accept=".jpg,.png,.jpeg"
             multiple
-            required
             className="w-full px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:bg-white focus:border-slate-600"
           />
         </div>

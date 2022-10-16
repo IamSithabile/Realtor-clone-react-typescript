@@ -30,11 +30,13 @@ const App = (): JSX.Element => {
           <Route path="/offers" element={<Offers />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/profile" element={<PrivateRoute />}>
-            <Route path="/profile" element={<Profile />} />
+            <Route index element={<Profile />} />
           </Route>
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/create-listing" element={<CreateListing />} />
+          <Route path="/create-listing" element={<CreateListing />}>
+            <Route index element={<CreateListing />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
