@@ -9,9 +9,11 @@ import { MdEdit } from "react-icons/md";
 type Props = {
   id: string;
   listing: DocumentData;
+  onDelete: (listingId: string) => void;
+  onEdit: (listingId: string) => void;
 };
 
-const ListingComponent = ({ id, listing }: Props) => {
+const ListingComponent = ({ id, listing, onDelete, onEdit }: Props) => {
   const {
     type,
     name,
@@ -74,7 +76,7 @@ const ListingComponent = ({ id, listing }: Props) => {
           </div>
         </div>
       </Link>
-      {/* {onDelete && (
+      {onDelete && (
         <FaTrash
           className="absolute bottom-2 right-2 h-[14px] cursor-pointer text-red-500"
           onClick={() => onDelete(listing.id)}
@@ -85,7 +87,7 @@ const ListingComponent = ({ id, listing }: Props) => {
           className="absolute bottom-2 right-7 h-4 cursor-pointer "
           onClick={() => onEdit(listing.id)}
         />
-      )} */}
+      )}
     </li>
   );
 };

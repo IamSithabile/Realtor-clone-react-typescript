@@ -1,6 +1,7 @@
 import { getAuth, updateProfile } from "firebase/auth";
 import {
   collection,
+  deleteDoc,
   doc,
   DocumentData,
   getDocs,
@@ -10,6 +11,7 @@ import {
   where,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
+import { AiOutlineDelete } from "react-icons/ai";
 import { FcHome } from "react-icons/fc";
 import { useNavigate } from "react-router";
 import { Link } from "react-router-dom";
@@ -126,6 +128,20 @@ const Profile = (): JSX.Element => {
     fetchUserListings();
   }, [auth.currentUser?.uid]);
 
+  const onDelete: (listingID: string) => void = async (listingID) => {
+    if (window.confirm("Are you sure you want to delete?")) {
+      await deleteDoc(doc(db, "listings", listingID));
+      const updatedListings = listings.filter(
+        (listing) => listing.id !== listingID
+      );
+      setListings(updatedListings);
+      toast.success("Successfully deleted the listing");
+    }
+  };
+  const onEdit: (listingID: string) => void = async (listingID) => {
+    navigate(`/edit-listing/${listingID}`);
+  };
+
   return (
     <>
       <section className=" px-6 max-w-6xl mx-auto">
@@ -198,6 +214,8 @@ const Profile = (): JSX.Element => {
                     key={listing.id}
                     id={listing.id}
                     listing={listing.data}
+                    onDelete={() => onDelete(listing.id)}
+                    onEdit={() => onEdit(listing.id)}
                   />
                 );
               })}
