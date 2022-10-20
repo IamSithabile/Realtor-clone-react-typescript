@@ -189,7 +189,7 @@ const Profile = (): JSX.Element => {
 
         <section className="mt-10 text-3xl font-bold max-w-6xl mx-auto">
           <h1 className="text-center mt-3">My Listings</h1>
-          <ul className="mt-3 w-full">
+          <ul className="sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {!isLoading &&
               listings.length > 0 &&
               listings.map((listing) => {
