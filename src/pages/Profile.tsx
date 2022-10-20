@@ -1,12 +1,21 @@
 import { getAuth, updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
-import React, { useState } from "react";
+import {
+  collection,
+  doc,
+  DocumentData,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { FcHome } from "react-icons/fc";
 import { useNavigate } from "react-router";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import ListingComponent from "../components/ListingComponent";
 import { db } from "../firebase";
-
 const Profile = (): JSX.Element => {
   const auth = getAuth();
   const navigate = useNavigate();
@@ -14,6 +23,11 @@ const Profile = (): JSX.Element => {
   type ProfileInfo = {
     email: string;
     displayName: string;
+  };
+
+  type Listings = {
+    id: string;
+    data: DocumentData;
   };
 
   const [formData, setFormData] = useState<ProfileInfo>({
@@ -24,6 +38,9 @@ const Profile = (): JSX.Element => {
   const { email, displayName } = formData;
 
   const [changeDetail, setChangeDetail] = useState(false);
+
+  const [listings, setListings] = useState<Listings[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const getErrorMessage = (error: unknown) => {
     if (error instanceof Error) return toast.error(error.message);
@@ -69,6 +86,45 @@ const Profile = (): JSX.Element => {
     toast.success("Logged out!");
     navigate("/");
   };
+
+  console.log(auth.currentUser?.uid);
+
+  // Fetch listings
+
+  useEffect(() => {
+    // Create an async funtion within the useeffect
+    async function fetchUserListings() {
+      // Defines which collection to look into
+      const listingRef = collection(db, "listings");
+
+      // queries which document to return
+      const q = query(
+        listingRef,
+        where("userRef", "==", auth.currentUser?.uid),
+        orderBy("timestamp", "desc")
+      );
+
+      // Asynchronously gets the documemnts
+      const querySnap = await getDocs(q);
+
+      let listings: Listings[] = [];
+      querySnap.forEach((doc) => {
+        doc.data()
+          ? console.log("There is data :", doc.data())
+          : console.log("Doc Exists?", doc.exists());
+
+        return listings.push({
+          id: doc.id,
+          data: doc.data(),
+        });
+      });
+
+      setListings(listings);
+
+      setIsLoading(false);
+    }
+    fetchUserListings();
+  }, [auth.currentUser?.uid]);
 
   return (
     <>
@@ -130,6 +186,23 @@ const Profile = (): JSX.Element => {
             </Link>
           </button>
         </form>
+
+        <section className="mt-10 text-3xl font-bold max-w-6xl mx-auto">
+          <h1 className="text-center mt-3">My Listings</h1>
+          <ul className="mt-3 w-full">
+            {!isLoading &&
+              listings.length > 0 &&
+              listings.map((listing) => {
+                return (
+                  <ListingComponent
+                    key={listing.id}
+                    id={listing.id}
+                    listing={listing.data}
+                  />
+                );
+              })}
+          </ul>
+        </section>
       </section>
     </>
   );

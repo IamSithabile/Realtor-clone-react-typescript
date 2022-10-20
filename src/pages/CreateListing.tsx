@@ -18,7 +18,7 @@ import {
 import { db } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
-interface iForm {
+export interface iForm {
   type: string;
   name: string;
   bedrooms: number;
