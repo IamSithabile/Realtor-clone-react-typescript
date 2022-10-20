@@ -6,24 +6,6 @@ import { MdLocationOn } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
 
-type ListingData = {
-  type: string;
-  name: string;
-  bedrooms: number;
-  bathrooms: number;
-  parking: boolean;
-  furnished: boolean;
-  address: string;
-  description: string;
-  offer: boolean;
-  regularPrice: number;
-  discountedPrice: number;
-  latitude: number;
-  longitude: number;
-  imgUrls: string[];
-  timestamp: Timestamp;
-};
-
 type Props = {
   id: string;
   listing: DocumentData;
