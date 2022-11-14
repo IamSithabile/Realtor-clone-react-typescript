@@ -5,6 +5,7 @@ import Profile from "./pages/Profile";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
+import EditListing from "./pages/EditListing";
 
 import {
   BrowserRouter as Router,
@@ -34,10 +35,12 @@ const App = (): JSX.Element => {
           </Route>
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/create-listing" element={<CreateListing />}>
+          <Route path="/create-listing" element={<PrivateRoute />}>
             <Route index element={<CreateListing />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/edit-listing" element={<PrivateRoute />}>
+            <Route path="/edit-listing:listingId" element={<EditListing />} />
+          </Route>
         </Routes>
       </Router>
       <ToastContainer
