@@ -68,11 +68,11 @@ const EditListing = (): JSX.Element => {
     const fetchListing = async () => {
       const docRef = doc(db, "listings", listingId!);
       const docSnap = await getDoc(docRef);
-      let serverData = { ...docSnap.data() };
       if (docSnap.exists()) {
+        console.log("Listing exists");
         setListing(docSnap.data());
         setFormData((prevState) => {
-          return { ...prevState, ...serverData };
+          return { ...prevState, ...docSnap.data() };
         });
         setLoading(false);
       } else {
@@ -243,6 +243,7 @@ const EditListing = (): JSX.Element => {
     ).catch((error) => {
       setLoading(false);
       toast.error("Images not uploaded");
+      console.log(error);
       return;
     });
 
