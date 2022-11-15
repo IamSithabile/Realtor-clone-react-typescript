@@ -15,11 +15,14 @@ import SwiperCore, {
 } from "swiper";
 import "swiper/css/bundle";
 
+import { FaShare } from "react-icons/fa";
+
 type Props = {};
 
 const Listing = (props: Props) => {
   const [loading, setLoading] = useState(true);
   const [listing, setListing] = useState<DocumentData>({});
+  const [copiedText, setCopiedText] = useState(false);
 
   const params = useParams();
 
@@ -59,6 +62,7 @@ const Listing = (props: Props) => {
         effect="fade"
         modules={[EffectFade]}
         autoplay={{ delay: 3000 }}
+        className="relative"
       >
         {listing.imgUrls.map((url: string, index: number) => (
           <SwiperSlide key={index}>
@@ -72,6 +76,24 @@ const Listing = (props: Props) => {
           </SwiperSlide>
         ))}
       </Swiper>
+      <div className="absolute top-[13%] right-[3%] z-50 bg-white rounded-full border-gray-300 border-2 cursor-pointer">
+        <FaShare
+          className=" flex text-4xl justify-center align-center text-slate-500 p-2"
+          onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            setCopiedText(true);
+
+            setTimeout(() => {
+              setCopiedText(false);
+            }, 2000);
+          }}
+        />
+      </div>
+      {copiedText && (
+        <p className="absolute top-[18%] right-[3%] z-10 bg-white font-semibold p-1 rounded">
+          Text Copied!
+        </p>
+      )}
     </main>
   );
 };
